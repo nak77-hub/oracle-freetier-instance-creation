@@ -7,6 +7,15 @@ on:
 jobs:
   create-instance:
     runs-on: ubuntu-latest
+    env:
+      OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
+      OCI_TENANCY_ID: ${{ secrets.OCI_TENANCY_ID }}
+      OCI_KEY_FINGERPRINT: ${{ secrets.OCI_KEY_FINGERPRINT }}
+      OCI_REGION: ${{ secrets.OCI_REGION }}
+      OCI_SUBNET_ID: ${{ secrets.OCI_SUBNET_ID }}
+      OCI_IMAGE_ID: ${{ secrets.OCI_IMAGE_ID }}
+      OCI_AVAILABILITY_DOMAIN: ${{ secrets.OCI_AVAILABILITY_DOMAIN }}
+      SSH_AUTHORIZED_KEYS: ${{ secrets.SSH_AUTHORIZED_KEYS }}
     steps:
       - uses: actions/checkout@v3
 
@@ -23,22 +32,24 @@ jobs:
           mkdir -p ~/.oci
           echo "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/private_key.pem
           chmod 600 ~/.oci/private_key.pem
-          printf "[DEFAULT]\nuser=%s\nfingerprint=%s\ntenancy=%s\nregion=%s\nkey_file=%s\n" \
-            "${{ secrets.OCI_USER_ID }}" \
-            "${{ secrets.OCI_KEY_FINGERPRINT }}" \
-            "${{ secrets.OCI_TENANCY_ID }}" \
-            "${{ secrets.OCI_REGION }}" \
-            "/home/runner/.oci/private_key.pem" > ~/.oci/config
+          cat > ~/.oci/config << 'OCIEOF'
+[DEFAULT]
+OCIEOF
+          echo "user=${{ secrets.OCI_USER_ID }}" >> ~/.oci/config
+          echo "fingerprint=${{ secrets.OCI_KEY_FINGERPRINT }}" >> ~/.oci/config
+          echo "tenancy=${{ secrets.OCI_TENANCY_ID }}" >> ~/.oci/config
+          echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
+          echo "key_file=/home/runner/.oci/private_key.pem" >> ~/.oci/config
           chmod 600 ~/.oci/config
           cp ~/.oci/config oci_config
+          cat ~/.oci/config
 
       - name: Create env file
         run: |
-          printf "OCI_SUBNET_ID=%s\nOCI_IMAGE_ID=%s\nOCI_AVAILABILITY_DOMAIN=%s\nSSH_AUTHORIZED_KEYS=%s\n" \
-            "${{ secrets.OCI_SUBNET_ID }}" \
-            "${{ secrets.OCI_IMAGE_ID }}" \
-            "${{ secrets.OCI_AVAILABILITY_DOMAIN }}" \
-            "${{ secrets.SSH_AUTHORIZED_KEYS }}" > oci.env
+          echo "OCI_SUBNET_ID=${{ secrets.OCI_SUBNET_ID }}" > oci.env
+          echo "OCI_IMAGE_ID=${{ secrets.OCI_IMAGE_ID }}" >> oci.env
+          echo "OCI_AVAILABILITY_DOMAIN=${{ secrets.OCI_AVAILABILITY_DOMAIN }}" >> oci.env
+          echo "SSH_AUTHORIZED_KEYS=${{ secrets.SSH_AUTHORIZED_KEYS }}" >> oci.env
 
       - name: Run script
         run: python main.py
