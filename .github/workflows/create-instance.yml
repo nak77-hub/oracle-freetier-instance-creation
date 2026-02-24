@@ -23,26 +23,29 @@ jobs:
       - name: Create OCI config file
         run: |
           mkdir -p ~/.oci
+          # Write the private key
           echo "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/private_key.pem
           chmod 600 ~/.oci/private_key.pem
           
-          # Everything below is now properly indented for YAML
-          cat > ~/.oci/config << 'OCIEOF'
-          [DEFAULT]
-          user=${{ secrets.OCI_USER_ID }}
-          fingerprint=${{ secrets.OCI_KEY_FINGERPRINT }}
-          tenancy=${{ secrets.OCI_TENANCY_ID }}
-          region=${{ secrets.OCI_REGION }}
-          key_file=/home/runner/.oci/private_key.pem
-          OCIEOF
-
+          # Create the config file without any leading whitespace
+          echo "[DEFAULT]" > ~/.oci/config
+          echo "user=${{ secrets.OCI_USER_ID }}" >> ~/.oci/config
+          echo "fingerprint=${{ secrets.OCI_KEY_FINGERPRINT }}" >> ~/.oci/config
+          echo "tenancy=${{ secrets.OCI_TENANCY_ID }}" >> ~/.oci/config
+          echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
+          echo "key_file=/home/runner/.oci/private_key.pem" >> ~/.oci/config
+          
           chmod 600 ~/.oci/config
-          # Optional: copy for local script access if needed
+          # Copy to workspace if your script expects it there
           cp ~/.oci/config oci_config
 
       - name: Create env file
         run: |
-          echo "OCI_SUBNET_ID=${{ secrets.OCI_SUBNET_ID }}" > oci.env
+          # Added OCI_USER_ID and others to ensure the Python script can see them
+          echo "OCI_USER_ID=${{ secrets.OCI_USER_ID }}" > oci.env
+          echo "OCI_TENANCY_ID=${{ secrets.OCI_TENANCY_ID }}" >> oci.env
+          echo "OCI_REGION=${{ secrets.OCI_REGION }}" >> oci.env
+          echo "OCI_SUBNET_ID=${{ secrets.OCI_SUBNET_ID }}" >> oci.env
           echo "OCI_IMAGE_ID=${{ secrets.OCI_IMAGE_ID }}" >> oci.env
           echo "OCI_AVAILABILITY_DOMAIN=${{ secrets.OCI_AVAILABILITY_DOMAIN }}" >> oci.env
           echo "SSH_AUTHORIZED_KEYS=${{ secrets.SSH_AUTHORIZED_KEYS }}" >> oci.env
