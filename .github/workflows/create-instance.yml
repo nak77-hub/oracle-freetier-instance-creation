@@ -39,16 +39,24 @@ jobs:
           # Copy to workspace if your script expects it there
           cp ~/.oci/config oci_config
 
-      - name: Create env file
-        run: |
-          # Added OCI_USER_ID and others to ensure the Python script can see them
-          echo "OCI_USER_ID=${{ secrets.OCI_USER_ID }}" > oci.env
-          echo "OCI_TENANCY_ID=${{ secrets.OCI_TENANCY_ID }}" >> oci.env
-          echo "OCI_REGION=${{ secrets.OCI_REGION }}" >> oci.env
-          echo "OCI_SUBNET_ID=${{ secrets.OCI_SUBNET_ID }}" >> oci.env
-          echo "OCI_IMAGE_ID=${{ secrets.OCI_IMAGE_ID }}" >> oci.env
-          echo "OCI_AVAILABILITY_DOMAIN=${{ secrets.OCI_AVAILABILITY_DOMAIN }}" >> oci.env
-          echo "SSH_AUTHORIZED_KEYS=${{ secrets.SSH_AUTHORIZED_KEYS }}" >> oci.env
+            - name: Create env file
+              run: |
+          # Write SSH public key to a file (script needs a file path, not key content)
+          echo "${{ secrets.SSH_AUTHORIZED_KEYS }}" > ssh_authorized_keys.pub
+
+          # Build oci.env with exact variable names the Python script reads
+          {
+            echo "OCI_CONFIG=oci_config"
+            echo "OCT_FREE_AD=${{ secrets.OCI_AVAILABILITY_DOMAIN }}"
+            echo "OCI_SUBNET_ID=${{ secrets.OCI_SUBNET_ID }}"
+            echo "OCI_IMAGE_ID=${{ secrets.OCI_IMAGE_ID }}"
+            echo "SSH_AUTHORIZED_KEYS_FILE=ssh_authorized_keys.pub"
+            echo "DISPLAY_NAME=my-arm-instance"
+            echo "OCI_COMPUTE_SHAPE=VM.Standard.A1.Flex"
+            echo "ASSIGN_PUBLIC_IP=true"
+            echo "REQUEST_WAIT_TIME_SECS=60"
+            echo "BOOT_VOLUME_SIZE=50"
+          } > oci.env
 
       - name: Run script
         run: python main.py
