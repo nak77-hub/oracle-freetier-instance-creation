@@ -23,12 +23,11 @@ jobs:
       - name: Create OCI config file
         run: |
           mkdir -p ~/.oci
-          # Write the private key
           echo "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/private_key.pem
           chmod 600 ~/.oci/private_key.pem
           
-          # Create the config file without any leading whitespace
-          echo "[DEFAULT]" > ~/.oci/config
+          # Use single quotes to prevent shell expansion/indentation issues
+          echo '[DEFAULT]' > ~/.oci/config
           echo "user=${{ secrets.OCI_USER_ID }}" >> ~/.oci/config
           echo "fingerprint=${{ secrets.OCI_KEY_FINGERPRINT }}" >> ~/.oci/config
           echo "tenancy=${{ secrets.OCI_TENANCY_ID }}" >> ~/.oci/config
@@ -36,17 +35,16 @@ jobs:
           echo "key_file=/home/runner/.oci/private_key.pem" >> ~/.oci/config
           
           chmod 600 ~/.oci/config
-          # Copy to workspace if your script expects it there
           cp ~/.oci/config oci_config
 
-            - name: Create env file
-              run: |
-          # Write SSH public key to a file (script needs a file path, not key content)
+      - name: Create env file
+        run: |
           echo "${{ secrets.SSH_AUTHORIZED_KEYS }}" > ssh_authorized_keys.pub
-
-          # Build oci.env with exact variable names the Python script reads
+          
+          # Corrected: All variables must be flush left inside this block
           {
             echo "OCI_CONFIG=oci_config"
+            echo "OCI_USER_ID=${{ secrets.OCI_USER_ID }}"
             echo "OCT_FREE_AD=${{ secrets.OCI_AVAILABILITY_DOMAIN }}"
             echo "OCI_SUBNET_ID=${{ secrets.OCI_SUBNET_ID }}"
             echo "OCI_IMAGE_ID=${{ secrets.OCI_IMAGE_ID }}"
