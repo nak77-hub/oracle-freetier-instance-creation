@@ -1,4 +1,5 @@
 name: Create OCI Instance
+
 on:
   schedule:
     - cron: '*/10 * * * *'
@@ -7,17 +8,9 @@ on:
 jobs:
   create-instance:
     runs-on: ubuntu-latest
-    env:
-      OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
-      OCI_TENANCY_ID: ${{ secrets.OCI_TENANCY_ID }}
-      OCI_KEY_FINGERPRINT: ${{ secrets.OCI_KEY_FINGERPRINT }}
-      OCI_REGION: ${{ secrets.OCI_REGION }}
-      OCI_SUBNET_ID: ${{ secrets.OCI_SUBNET_ID }}
-      OCI_IMAGE_ID: ${{ secrets.OCI_IMAGE_ID }}
-      OCI_AVAILABILITY_DOMAIN: ${{ secrets.OCI_AVAILABILITY_DOMAIN }}
-      SSH_AUTHORIZED_KEYS: ${{ secrets.SSH_AUTHORIZED_KEYS }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -32,17 +25,20 @@ jobs:
           mkdir -p ~/.oci
           echo "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/private_key.pem
           chmod 600 ~/.oci/private_key.pem
+          
+          # Everything below is now properly indented for YAML
           cat > ~/.oci/config << 'OCIEOF'
-[DEFAULT]
-OCIEOF
-          echo "user=${{ secrets.OCI_USER_ID }}" >> ~/.oci/config
-          echo "fingerprint=${{ secrets.OCI_KEY_FINGERPRINT }}" >> ~/.oci/config
-          echo "tenancy=${{ secrets.OCI_TENANCY_ID }}" >> ~/.oci/config
-          echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
-          echo "key_file=/home/runner/.oci/private_key.pem" >> ~/.oci/config
+          [DEFAULT]
+          user=${{ secrets.OCI_USER_ID }}
+          fingerprint=${{ secrets.OCI_KEY_FINGERPRINT }}
+          tenancy=${{ secrets.OCI_TENANCY_ID }}
+          region=${{ secrets.OCI_REGION }}
+          key_file=/home/runner/.oci/private_key.pem
+          OCIEOF
+
           chmod 600 ~/.oci/config
+          # Optional: copy for local script access if needed
           cp ~/.oci/config oci_config
-          cat ~/.oci/config
 
       - name: Create env file
         run: |
